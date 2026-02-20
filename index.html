@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MobileCraft — Mine. Build. Survive.</title>
+<meta name="description" content="MobileCraft is a free browser-based sandbox game. Mine blocks, build structures, craft tools and survive the night on your phone.">
+<meta property="og:title" content="MobileCraft — Mine. Build. Survive.">
+<meta property="og:description" content="Free browser sandbox game for mobile. No download needed.">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#7ec850;
+  --darkgreen:#4a8a2a;
+  --deepgreen:#0d2a0d;
+  --brown:#8B5E3C;
+  --bg:#111;
+  --bg2:#161616;
+  --text:#e8e8e8;
+  --muted:#777;
+  --border:#1e1e1e;
+  --card:#161616;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;overflow-x:hidden;}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 6%;height:64px;
+  background:rgba(8,8,8,0.96);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);
+}
+.nav-logo{
+  font-family:'Press Start 2P',monospace;
+  font-size:12px;color:#fff;text-decoration:none;
+  display:flex;align-items:center;gap:10px;letter-spacing:1px;
+}
+.nav-logo-block{
+  width:26px;height:26px;
+  background:var(--green);
+  box-shadow:inset -3px -3px 0 var(--darkgreen),inset 2px 2px 0 #a0e060;
+  flex-shrink:0;
+}
+.nav-logo span{color:var(--green);}
+.nav-links{display:flex;align-items:center;gap:32px;}
+.nav-links a{
+  color:var(--muted);text-decoration:none;
+  font-weight:700;font-size:14px;
+  transition:color 0.15s;
+}
+.nav-links a:hover{color:#fff;}
+.nav-play{
+  padding:9px 22px;
+  background:var(--green);color:#000;
+  font-weight:900;font-size:14px;
+  text-decoration:none;
+  border-radius:3px;
+  border-bottom:3px solid var(--darkgreen);
+  transition:transform 0.1s,background 0.15s;
+}
+.nav-play:hover{background:#90e060;transform:translateY(-1px);}
+.nav-play:active{transform:translateY(1px);border-bottom-width:1px;}
+@media(max-width:640px){.nav-links{display:none;}}
+
+/* HERO */
+#hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  overflow:hidden;
+  padding:80px 6% 120px;
+  background:linear-gradient(180deg,#060e18 0%,#0a1c34 40%,#113050 70%,#1a4a70 100%);
+}
+#stars{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.s{position:absolute;background:#fff;border-radius:50%;animation:tw 3s infinite alternate;}
+@keyframes tw{0%{opacity:.1;}100%{opacity:.95;}}
+
+/* pixel sun */
+#sun{
+  position:absolute;top:70px;right:10%;
+  width:72px;height:72px;
+  background:#FFD700;
+  image-rendering:pixelated;
+  box-shadow:0 0 0 6px #FFA500,0 0 80px rgba(255,200,0,.55),0 0 150px rgba(255,180,0,.2);
+  animation:sp 5s ease-in-out infinite;
+}
+@keyframes sp{0%,100%{box-shadow:0 0 0 6px #FFA500,0 0 80px rgba(255,200,0,.55);}50%{box-shadow:0 0 0 10px #FFD700,0 0 120px rgba(255,200,0,.8);}}
+
+/* clouds */
+.cld{
+  position:absolute;background:#fff;
+  opacity:.09;
+  animation:cldmv linear infinite;
+}
+@keyframes cldmv{0%{transform:translateX(-300px);}100%{transform:translateX(110vw);}}
+
+/* floating blocks */
+.fb{
+  position:absolute;
+  width:28px;height:28px;
+  image-rendering:pixelated;
+  animation:fbf ease-in-out infinite;
+}
+@keyframes fbf{0%,100%{transform:translateY(0)rotate(0);}50%{transform:translateY(-22px)rotate(7deg);}}
+
+/* ground */
+#gnd{position:absolute;bottom:0;left:0;right:0;}
+.gnd-g{
+  height:20px;
+  background:repeating-linear-gradient(90deg,#4a9a2a 0,#4a9a2a 16px,#3a8a1a 16px,#3a8a1a 32px);
+}
+.gnd-d{
+  height:56px;
+  background:repeating-linear-gradient(180deg,#6B4226 0,#6B4226 15px,#5a3a1a 15px,#5a3a1a 16px);
+  position:relative;overflow:hidden;
+}
+.gnd-d::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent 31px,rgba(0,0,0,.12) 31px,rgba(0,0,0,.12) 32px);
+}
+
+/* hero content */
+.hero-inner{
+  position:relative;z-index:10;
+  text-align:center;max-width:760px;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(126,200,80,.12);
+  border:1px solid rgba(126,200,80,.25);
+  color:var(--green);
+  font-size:11px;font-weight:900;letter-spacing:3px;
+  padding:7px 18px;border-radius:100px;
+  margin-bottom:28px;text-transform:uppercase;
+}
+.hero-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);animation:sp 1.5s infinite;}
+h1{
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(24px,8vw,60px);
+  color:#fff;line-height:1.25;
+  letter-spacing:1px;
+  text-shadow:0 4px 40px rgba(126,200,80,.15);
+  margin-bottom:10px;
+}
+h1 span{color:var(--green);text-shadow:0 0 50px rgba(126,200,80,.4);}
+.hero-sub{
+  font-size:clamp(15px,3vw,21px);
+  color:#7a9dbf;font-weight:600;
+  line-height:1.7;margin-bottom:44px;
+}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:36px;}
+.btn-g{
+  padding:15px 40px;
+  background:var(--green);color:#000;
+  font-weight:900;font-size:16px;
+  text-decoration:none;border-radius:4px;
+  border-bottom:4px solid var(--darkgreen);
+  transition:transform .1s,border-bottom-width .1s,background .15s;
+}
+.btn-g:hover{background:#90e060;transform:translateY(-2px);}
+.btn-g:active{transform:translateY(2px);border-bottom-width:1px;}
+.btn-o{
+  padding:15px 32px;
+  background:transparent;color:#aaa;
+  font-weight:700;font-size:16px;
+  text-decoration:none;border-radius:4px;
+  border:2px solid #2a2a2a;
+  transition:border-color .15s,color .15s;
+}
+.btn-o:hover{border-color:#444;color:#fff;}
+.live-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  color:#555;font-size:13px;font-weight:700;letter-spacing:1px;
+}
+.live-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);
+  animation:lp 1.8s infinite;
+}
+@keyframes lp{0%,100%{box-shadow:0 0 0 0 rgba(126,200,80,.5);}50%{box-shadow:0 0 0 7px rgba(126,200,80,0);}}
+
+/* PIXEL STRIPE */
+.stripe{
+  height:14px;
+  background:repeating-linear-gradient(90deg,var(--green) 0,var(--green) 14px,var(--darkgreen) 14px,var(--darkgreen) 28px);
+  opacity:.2;
+}
+
+/* STATS BAR */
+#stats{
+  background:var(--deepgreen);
+  border-top:1px solid #1a3a1a;border-bottom:1px solid #1a3a1a;
+  padding:52px 6%;
+}
+.stats-g{
+  max-width:1000px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:24px;text-align:center;
+}
+@media(max-width:580px){.stats-g{grid-template-columns:repeat(2,1fr);}}
+.stat-n{
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(14px,3vw,26px);
+  color:var(--green);display:block;margin-bottom:10px;
+}
+.stat-l{color:rgba(255,255,255,.35);font-size:12px;font-weight:800;letter-spacing:3px;}
+
+/* CONTAINERS */
+.wrap{max-width:1100px;margin:0 auto;padding:0 6%;}
+section{padding:100px 0;}
+
+/* SECTION LABELS */
+.lbl{font-size:11px;font-weight:900;letter-spacing:4px;color:var(--green);display:block;margin-bottom:10px;}
+.sec-h{
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(13px,2.5vw,20px);
+  color:#fff;line-height:1.6;margin-bottom:18px;
+}
+.sec-p{color:var(--muted);font-size:16px;line-height:1.8;max-width:500px;}
+
+/* SHOWCASE — alternating like Mojang */
+#showcase{background:var(--bg2);border-top:1px solid var(--border);}
+.show-item{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:80px;align-items:center;
+  padding:90px 6%;max-width:1200px;margin:0 auto;
+  border-bottom:1px solid var(--border);
+}
+.show-item:last-child{border-bottom:none;}
+.show-item.rev .show-vis{order:2;}
+.show-item.rev .show-txt{order:1;}
+@media(max-width:768px){
+  .show-item{grid-template-columns:1fr;gap:36px;padding:60px 6%;}
+  .show-item.rev .show-vis,.show-item.rev .show-txt{order:unset;}
+}
+.show-vis{
+  background:#0e0e0e;border:1px solid var(--border);
+  border-radius:6px;overflow:hidden;
+  aspect-ratio:4/3;position:relative;
+  transition:border-color .25s;
+}
+.show-vis:hover{border-color:#333;}
+.show-vis canvas{width:100%;height:100%;display:block;image-rendering:pixelated;}
+.show-tag{
+  position:absolute;bottom:12px;right:12px;
+  background:rgba(0,0,0,.7);
+  color:var(--green);font-size:10px;font-weight:800;
+  padding:4px 10px;letter-spacing:2px;
+  border:1px solid rgba(126,200,80,.2);
+}
+
+/* FEATURES MOSAIC */
+#feats{background:var(--bg);border-top:1px solid var(--border);}
+.feats-head{text-align:center;margin-bottom:56px;}
+.feats-g{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);
+  border-radius:6px;overflow:hidden;
+}
+@media(max-width:900px){.feats-g{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.feats-g{grid-template-columns:1fr;}}
+.feat{
+  background:var(--card);padding:32px 26px;
+  transition:background .2s;
+}
+.feat:hover{background:#1c1c1c;}
+.feat-ico{font-size:26px;margin-bottom:14px;display:block;}
+.feat h3{font-size:14px;font-weight:900;color:#fff;margin-bottom:8px;}
+.feat p{color:var(--muted);font-size:13px;line-height:1.7;}
+
+/* PATCH NOTES */
+#patch{background:var(--bg2);border-top:1px solid var(--border);}
+.patch-list{display:flex;flex-direction:column;gap:12px;margin-top:44px;}
+.patch-card{
+  display:flex;gap:20px;align-items:flex-start;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:5px;padding:22px 24px;
+  transition:border-color .2s;
+}
+.patch-card:hover{border-color:#333;}
+.patch-v{
+  font-family:'Press Start 2P',monospace;
+  font-size:9px;color:var(--green);
+  padding-top:3px;min-width:52px;
+}
+.patch-body h4{font-size:15px;font-weight:900;color:#fff;margin-bottom:6px;}
+.patch-body p{color:var(--muted);font-size:13px;line-height:1.7;}
+.patch-date{color:#333;font-size:11px;font-weight:700;letter-spacing:1px;margin-top:8px;}
+.tag-new{
+  display:inline-block;
+  background:rgba(126,200,80,.15);color:var(--green);
+  font-size:10px;font-weight:900;letter-spacing:2px;
+  padding:2px 8px;margin-left:10px;
+  border:1px solid rgba(126,200,80,.2);
+}
+
+/* CTA */
+#cta{
+  padding:120px 6%;text-align:center;
+  background:radial-gradient(ellipse 80% 60% at 50% 100%,#0d280d,var(--bg) 70%);
+  border-top:1px solid var(--border);
+}
+#cta .sec-h{font-size:clamp(15px,3.5vw,26px);margin:0 auto 16px;max-width:600px;}
+#cta p{color:var(--muted);font-size:17px;margin-bottom:44px;}
+.cta-note{margin-top:18px;color:#333;font-size:12px;font-weight:700;letter-spacing:1px;}
+
+/* FOOTER */
+footer{
+  background:#080808;border-top:1px solid #141414;
+  padding:52px 6%;
+}
+.foot-inner{
+  max-width:1100px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:24px;
+}
+.foot-logo{font-family:'Press Start 2P',monospace;font-size:10px;color:#2a2a2a;}
+.foot-logo span{color:#1a4a1a;}
+.foot-links{display:flex;gap:28px;}
+.foot-links a{color:#2a2a2a;text-decoration:none;font-size:12px;font-weight:800;letter-spacing:1px;transition:color .15s;}
+.foot-links a:hover{color:#555;}
+.foot-copy{color:#1e1e1e;font-size:11px;font-weight:800;letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-block"></div>
+    Mobile<span>Craft</span>
+  </a>
+  <div class="nav-links">
+    <a href="#showcase">Features</a>
+    <a href="#feats">What's Included</a>
+    <a href="#patch">Updates</a>
+  </div>
+  <a href="mobilecraft.html" class="nav-play">Play Free →</a>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <div id="stars"></div>
+  <div id="sun"></div>
+  <div class="cld" style="width:140px;height:36px;top:15%;animation-duration:45s;animation-delay:0s;border-radius:4px;"></div>
+  <div class="cld" style="width:90px;height:26px;top:25%;animation-duration:60s;animation-delay:-22s;border-radius:3px;"></div>
+  <div class="cld" style="width:180px;height:44px;top:10%;animation-duration:80s;animation-delay:-40s;border-radius:5px;"></div>
+
+  <div class="fb" style="left:7%;top:38%;animation-duration:4.2s;animation-delay:0s;background:#4a8a2a;box-shadow:inset -3px -3px 0 #2a6a0a,inset 2px 2px 0 #6aaa3a;"></div>
+  <div class="fb" style="left:84%;top:30%;animation-duration:5.5s;animation-delay:1.4s;background:#888;box-shadow:inset -3px -3px 0 #555,inset 2px 2px 0 #aaa;"></div>
+  <div class="fb" style="left:76%;top:58%;animation-duration:3.8s;animation-delay:0.7s;background:#8B5E3C;box-shadow:inset -3px -3px 0 #5a3a1a,inset 2px 2px 0 #aa7a5a;"></div>
+  <div class="fb" style="left:14%;top:66%;animation-duration:4.8s;animation-delay:2.1s;background:#c8a040;box-shadow:inset -3px -3px 0 #8a6a00,inset 2px 2px 0 #ffd080;width:20px;height:20px;"></div>
+  <div class="fb" style="left:91%;top:44%;animation-duration:6.2s;animation-delay:0.3s;background:#3a3aaa;box-shadow:inset -3px -3px 0 #1a1a88,inset 2px 2px 0 #7a7acc;width:20px;height:20px;"></div>
+
+  <div class="hero-inner">
+    <div class="hero-badge">🎮 Alpha v0.2 &nbsp;·&nbsp; Free to Play</div>
+    <h1>Mobile<span>Craft</span></h1>
+    <p class="hero-sub">Mine blocks. Build worlds. Survive the night.<br>A sandbox game made for your phone.</p>
+    <div class="btns">
+      <a href="mobilecraft.html" class="btn-g">▶ &nbsp;Play Free Now</a>
+      <a href="#showcase" class="btn-o">Learn More ↓</a>
+    </div>
+    <div class="live-pill">
+      <span class="live-dot"></span>
+      <span id="live-txt">Loading...</span>
+    </div>
+  </div>
+
+  <div id="gnd">
+    <div class="gnd-g"></div>
+    <div class="gnd-d"></div>
+  </div>
+</div>
+
+<div class="stripe"></div>
+
+<!-- STATS -->
+<div id="stats">
+  <div class="stats-g">
+    <div><span class="stat-n">FREE</span><span class="stat-l">ALWAYS</span></div>
+    <div><span class="stat-n">5</span><span class="stat-l">BIOMES</span></div>
+    <div><span class="stat-n">2,400+</span><span class="stat-l">LINES OF CODE</span></div>
+    <div><span class="stat-n" id="stat-p">...</span><span class="stat-l">ONLINE NOW</span></div>
+  </div>
+</div>
+
+<!-- SHOWCASE -->
+<div id="showcase">
+
+  <div class="show-item">
+    <div class="show-txt">
+      <span class="lbl">Explore</span>
+      <h2 class="sec-h">Five biomes.<br>One infinite world.</h2>
+      <p class="sec-p">Wander from grassy Plains to scorching Desert, icy Tundra, dense Forest and snowy biomes — each with unique terrain, blocks and atmosphere.</p>
+    </div>
+    <div class="show-vis">
+      <canvas id="c1" width="400" height="300"></canvas>
+      <div class="show-tag">EXPLORE</div>
+    </div>
+  </div>
+
+  <div class="show-item rev">
+    <div class="show-txt">
+      <span class="lbl">Survive</span>
+      <h2 class="sec-h">Day turns to night.<br>Stay alive.</h2>
+      <p class="sec-p">A full 10-minute day/night cycle. When darkness falls, zombies and skeletons hunt you down. Build shelter. Craft torches. Don't die.</p>
+    </div>
+    <div class="show-vis">
+      <canvas id="c2" width="400" height="300"></canvas>
+      <div class="show-tag">NIGHT</div>
+    </div>
+  </div>
+
+  <div class="show-item">
+    <div class="show-txt">
+      <span class="lbl">Craft</span>
+      <h2 class="sec-h">Raw materials.<br>Powerful tools.</h2>
+      <p class="sec-p">Chop wood into planks, craft sticks and build a crafting table. Every tool starts from something you pulled out of the ground.</p>
+    </div>
+    <div class="show-vis">
+      <canvas id="c3" width="400" height="300"></canvas>
+      <div class="show-tag">CRAFT</div>
+    </div>
+  </div>
+
+  <div class="show-item rev">
+    <div class="show-txt">
+      <span class="lbl">Multiplayer</span>
+      <h2 class="sec-h">Play together.<br>In real time.</h2>
+      <p class="sec-p">Sign in with Google and see your friends appear in your world live. Watch them build, explore and survive alongside you.</p>
+    </div>
+    <div class="show-vis">
+      <canvas id="c4" width="400" height="300"></canvas>
+      <div class="show-tag">ONLINE</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="stripe"></div>
+
+<!-- FEATURES -->
+<section id="feats">
+  <div class="wrap">
+    <div class="feats-head">
+      <span class="lbl">Everything included</span>
+      <h2 class="sec-h">No paywalls. No downloads.</h2>
+    </div>
+    <div class="feats-g">
+      <div class="feat"><span class="feat-ico">⛏️</span><h3>Mine & Place</h3><p>Hold to mine, tap to place. Designed for one-handed touch play.</p></div>
+      <div class="feat"><span class="feat-ico">🌱</span><h3>Infinite Worlds</h3><p>Procedurally generated with unique seeds. No two worlds are the same.</p></div>
+      <div class="feat"><span class="feat-ico">🧟</span><h3>Hostile Mobs</h3><p>Zombies and skeletons hunt you at night. Fight back or hide.</p></div>
+      <div class="feat"><span class="feat-ico">🐄</span><h3>Passive Animals</h3><p>Cows and pigs roam peacefully. The world feels alive.</p></div>
+      <div class="feat"><span class="feat-ico">💾</span><h3>Save Worlds</h3><p>Create multiple worlds. Your progress is always saved.</p></div>
+      <div class="feat"><span class="feat-ico">❤️</span><h3>Health & Hunger</h3><p>Manage HP and hunger. Starve and you start to weaken.</p></div>
+      <div class="feat"><span class="feat-ico">🌐</span><h3>Multiplayer</h3><p>Real-time online play powered by Firebase. See friends live.</p></div>
+      <div class="feat"><span class="feat-ico">📱</span><h3>Mobile First</h3><p>Joystick, jump button, hotbar — built for phones from day one.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PATCH NOTES -->
+<section id="patch" style="background:var(--bg2);border-top:1px solid var(--border);">
+  <div class="wrap">
+    <span class="lbl">Changelog</span>
+    <h2 class="sec-h">What's new</h2>
+    <div class="patch-list">
+      <div class="patch-card">
+        <span class="patch-v">v0.2</span>
+        <div class="patch-body">
+          <h4>Multiplayer + Firebase <span class="tag-new">LATEST</span></h4>
+          <p>Google sign-in, real-time multiplayer, live online player count. See friends move and build in your world. Firebase Realtime Database syncs positions every 150ms.</p>
+          <div class="patch-date">FEBRUARY 2025</div>
+        </div>
+      </div>
+      <div class="patch-card">
+        <span class="patch-v">v0.1.5</span>
+        <div class="patch-body">
+          <h4>Mobs & Combat</h4>
+          <p>Zombies, skeletons, cows and pigs added. HP bars, knockback, item drops. Hostile mobs only spawn at night. Animals wander passively during the day.</p>
+          <div class="patch-date">FEBRUARY 2025</div>
+        </div>
+      </div>
+      <div class="patch-card">
+        <span class="patch-v">v0.1</span>
+        <div class="patch-body">
+          <h4>Initial Release</h4>
+          <p>World generation with 5 biomes, crafting system, 36-slot inventory, 10 minute day/night cycle, hunger system, world saving and loading.</p>
+          <div class="patch-date">FEBRUARY 2025</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stripe"></div>
+
+<!-- CTA -->
+<div id="cta">
+  <h2 class="sec-h">Ready to start mining?</h2>
+  <p>Free forever. No download. Just open and play in Chrome.</p>
+  <a href="mobilecraft.html" class="btn-g" style="font-size:17px;padding:18px 52px;">▶ &nbsp;Play MobileCraft Free</a>
+  <div class="cta-note">WORKS IN CHROME · ANDROID & DESKTOP · NO ACCOUNT REQUIRED</div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-logo">Mobile<span>Craft</span> · Alpha v0.2</div>
+    <div class="foot-links">
+      <a href="mobilecraft.html">PLAY</a>
+      <a href="#showcase">FEATURES</a>
+      <a href="#patch">UPDATES</a>
+    </div>
+    <div class="foot-copy">© 2025 MOBILECRAFT · ALL RIGHTS RESERVED</div>
+  </div>
+</footer>
+
+<script type="module">
+// Stars
+const sw=document.getElementById('stars');
+for(let i=0;i<130;i++){
+  const s=document.createElement('div');
+  s.className='s';
+  const z=Math.random()>.8?2:1;
+  s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*70}%;animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*3}s;`;
+  sw.appendChild(s);
+}
+
+// Pixel scene helpers
+const px=(ctx,x,y,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(x,y,w,h);};
+const sky=(ctx,W,H,col='#5a9abf')=>{ctx.fillStyle=col;ctx.fillRect(0,0,W,H);};
+const ground=(ctx,W,H,gy,gc='#4a8a2a',dc='#6B4226')=>{
+  px(ctx,0,gy,W,12,gc);
+  px(ctx,0,gy+12,W,H,dc);
+};
+const block=(ctx,x,y,s,base,light,dark)=>{
+  px(ctx,x,y,s,s,base);
+  px(ctx,x,y,s,2,light);px(ctx,x,y,2,s,light);
+  px(ctx,x+s-2,y,2,s,dark);px(ctx,x,y+s-2,s,2,dark);
+};
+
+// C1: Biomes
+(()=>{
+  const cv=document.getElementById('c1');
+  const ctx=cv.getContext('2d');
+  const W=400,H=300;
+  ctx.imageSmoothingEnabled=false;
+  sky(ctx,W,H,'#5a9abf');
+  // 3 biomes
+  // Plains
+  ground(ctx,W*0.33,H,H*0.68,'#4a9a2a','#6B4226');
+  // Desert  
+  ground(ctx,W*0.34,H,H*0.72,'#d4b860','#b89040');
+  ctx.clearRect(0,0,W*0.33,0);
+  // Snow
+  ground(ctx,W*0.34,H,H*0.65,'#eeeeff','#8a7060');
+
+  // Actually just do it properly
+  ctx.clearRect(0,0,W,H);
+  sky(ctx,W,H,'#5a9abf');
+  // Plains left
+  px(ctx,0,H*0.68,W*0.38,12,'#4a9a2a');
+  px(ctx,0,H*0.68+12,W*0.38,H,'#6B4226');
+  // Desert mid
+  px(ctx,W*0.38,H*0.72,W*0.3,12,'#d4b860');
+  px(ctx,W*0.38,H*0.72+12,W*0.3,H,'#c4a040');
+  // Snow right
+  px(ctx,W*0.68,H*0.65,W,12,'#dde8ff');
+  px(ctx,W*0.68,H*0.65+12,W,H,'#8a6a50');
+
+  // tree
+  px(ctx,W*0.12,H*0.45,10,H*0.23,'#5a3a1a');
+  block(ctx,W*0.04,H*0.2,32,'#2a7a1a','#3aaa2a','#1a5a0a');
+  block(ctx,W*0.07,H*0.12,24,'#2a8a1a','#3abb2a','#1a6a0a');
+  block(ctx,W*0.1,H*0.06,16,'#2a9a1a','#4acc2a','#1a7a0a');
+
+  // cactus
+  px(ctx,W*0.53,H*0.55,8,H*0.17,'#2a8a2a');
+  px(ctx,W*0.5,H*0.6,14,6,'#2a8a2a');
+
+  // snowman lol
+  px(ctx,W*0.78,H*0.52,18,18,'#eee');
+  px(ctx,W*0.8,H*0.44,14,14,'#ddd');
+  px(ctx,W*0.82,H*0.42,4,2,'#333');
+  px(ctx,W*0.84,H*0.42,4,2,'#333');
+
+  // sun
+  px(ctx,W*0.85,H*0.06,22,22,'#FFD700');
+  px(ctx,W*0.87,H*0.04,18,18,'#FFE740');
+})();
+
+// C2: Night
+(()=>{
+  const cv=document.getElementById('c2');
+  const ctx=cv.getContext('2d');
+  const W=400,H=300;
+  ctx.imageSmoothingEnabled=false;
+  // Night gradient
+  ctx.fillStyle='#060c18';ctx.fillRect(0,0,W,H);
+  // Stars
+  [[30,20],[90,15],[155,35],[210,10],[270,28],[320,18],[360,25],[50,55],[180,48],[250,60],[340,52]].forEach(([x,y])=>{
+    px(ctx,x,y,2,2,'rgba(255,255,255,0.8)');
+  });
+  // Moon
+  px(ctx,W*0.82,24,28,28,'#d8e8ff');
+  px(ctx,W*0.84,26,22,22,'#c8d8f0');
+  px(ctx,W*0.85,28,10,10,'#b8c8e0');
+  // Ground
+  px(ctx,0,H*0.72,W,12,'#1a3a0a');
+  px(ctx,0,H*0.72+12,W,H,'#2a1a0a');
+  // Torch glow
+  ctx.fillStyle='rgba(255,140,0,0.1)';
+  ctx.beginPath();ctx.arc(W*0.55,H*0.6,55,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,140,0,0.08)';
+  ctx.beginPath();ctx.arc(W*0.55,H*0.6,80,0,Math.PI*2);ctx.fill();
+  // Torch
+  px(ctx,W*0.53,H*0.53,5,20,'#8B5E3C');
+  px(ctx,W*0.525,H*0.46,7,10,'#ff6600');
+  px(ctx,W*0.53,H*0.43,5,7,'#ffaa00');
+  px(ctx,W*0.535,H*0.41,3,5,'#ffee00');
+  // Zombie
+  const zx=W*0.25,zy=H*0.42;
+  px(ctx,zx,zy,22,32,'#3a7a3a'); // body
+  px(ctx,zx+2,zy-18,18,18,'#4a9a4a'); // head
+  px(ctx,zx-8,zy+2,8,24,'#3a7a3a'); // arm raised
+  px(ctx,zx+22,zy+4,8,22,'#3a7a3a'); // arm
+  px(ctx,zx+2,zy+32,8,18,'#2a5a8a'); // leg
+  px(ctx,zx+12,zy+32,8,18,'#2a5a8a'); // leg
+  px(ctx,zx+4,zy-17,4,4,'#f00'); // eyes
+  px(ctx,zx+12,zy-17,4,4,'#f00');
+  // Skeleton in bg
+  const sx2=W*0.7,sy2=H*0.44;
+  px(ctx,sx2,sy2,18,28,'#b0b0b0');
+  px(ctx,sx2+2,sy2-16,14,16,'#c0c0c0');
+  px(ctx,sx2+4,sy2-14,3,3,'#333');
+  px(ctx,sx2+9,sy2-14,3,3,'#333');
+  px(ctx,sx2+2,sy2+28,6,16,'#999');
+  px(ctx,sx2+10,sy2+28,6,16,'#999');
+})();
+
+// C3: Crafting UI
+(()=>{
+  const cv=document.getElementById('c3');
+  const ctx=cv.getContext('2d');
+  const W=400,H=300;
+  ctx.imageSmoothingEnabled=false;
+  // BG
+  ctx.fillStyle='#c6c6c6';ctx.fillRect(0,0,W,H);
+  // Panel
+  px(ctx,W*0.05,H*0.06,W*0.9,H*0.88,'#c6c6c6');
+  // Title bar
+  ctx.fillStyle='#333';ctx.font='bold 16px monospace';
+  ctx.fillText('INVENTORY',W*0.08,H*0.15);
+  ctx.fillStyle='#555';ctx.font='11px monospace';
+  ctx.fillText('CRAFTING',W*0.08,H*0.26);
+  // slot draw helper
+  const slot=(x,y,s,item)=>{
+    px(ctx,x,y,s,s,'#8b8b8b');
+    px(ctx,x,y,s,2,'#fff');px(ctx,x,y,2,s,'#fff');
+    px(ctx,x+s-2,y,2,s,'#373737');px(ctx,x,y+s-2,s,2,'#373737');
+    if(item) {px(ctx,x+3,y+3,s-6,s-6,item);}
+  };
+  // Craft grid 2x2
+  const gs=44,gx=W*0.1,gy=H*0.3;
+  slot(gx,gy,gs,'#8B5E3C'); // wood
+  slot(gx+gs+3,gy,gs,'#8B5E3C'); // wood
+  slot(gx,gy+gs+3,gs,'#8B5E3C'); // wood
+  slot(gx+gs+3,gy+gs+3,gs,null);
+  // Arrow
+  ctx.fillStyle='#555';ctx.font='28px monospace';
+  ctx.fillText('▶',W*0.48,H*0.6);
+  // Output
+  slot(W*0.6,H*0.42,56,'#c8a040');
+  ctx.fillStyle='#fff';ctx.font='bold 11px monospace';
+  ctx.fillText('x4',W*0.72,H*0.68);
+  // Divider
+  px(ctx,W*0.06,H*0.78,W*0.88,2,'#555');
+  // Inventory row
+  ctx.fillStyle='#555';ctx.font='10px monospace';ctx.fillText('INVENTORY',W*0.08,H*0.85);
+  for(let i=0;i<9;i++) slot(W*0.08+i*36,H*0.88,32,i<3?'#8B5E3C':i===3?'#555':null);
+})();
+
+// C4: Multiplayer
+(()=>{
+  const cv=document.getElementById('c4');
+  const ctx=cv.getContext('2d');
+  const W=400,H=300;
+  ctx.imageSmoothingEnabled=false;
+  sky(ctx,W,H,'#87ceeb');
+  ground(ctx,W,H,H*0.68);
+  // Some blocks built
+  for(let i=0;i<5;i++) px(ctx,W*0.55+i*18,H*0.68-18,16,16,'#4a8a2a');
+  for(let i=0;i<3;i++) px(ctx,W*0.55+i*18,H*0.68-36,16,16,'#888');
+
+  const drawP=(x,shirt,hair,name)=>{
+    const fy=H*0.68;
+    // legs
+    px(ctx,x-8,fy-24,7,22,'#3a3aaa');px(ctx,x+1,fy-24,7,22,'#2a2a99');
+    // body
+    px(ctx,x-10,fy-44,20,20,shirt);
+    // arms
+    px(ctx,x-16,fy-42,6,16,shirt);px(ctx,x+10,fy-42,6,16,shirt);
+    // head
+    px(ctx,x-9,fy-60,18,18,'#c8945a');
+    px(ctx,x-9,fy-60,18,4,hair);
+    // eyes
+    px(ctx,x-6,fy-52,4,3,'#1a1aee');px(ctx,x+2,fy-52,4,3,'#1a1aee');
+    // nametag
+    ctx.fillStyle='rgba(0,0,0,0.65)';
+    const tw=ctx.measureText(name).width;
+    ctx.fillRect(x-tw/2-4,fy-76,tw+8,13);
+    ctx.fillStyle='#fff';ctx.font='9px monospace';
+    ctx.textAlign='center';ctx.fillText(name,x,fy-66);
+    ctx.textAlign='left';
+  };
+  drawP(W*0.22,'#1e6bb0','#5a2800','You');
+  drawP(W*0.42,'#2a8a2a','#2a1a00','Friend1');
+  drawP(W*0.62,'#aa3a3a','#111','Friend2');
+
+  // Online pill
+  px(ctx,W*0.7,16,W*0.28,22,'rgba(0,0,0,0.6)');
+  px(ctx,W*0.72,22,7,7,'#7ec850');
+  ctx.fillStyle='#fff';ctx.font='9px monospace';
+  ctx.fillText('3 players online',W*0.73,H*0.1);
+})();
+
+// Firebase live count
+try {
+  const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+  const {getDatabase,ref,onValue}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+  const app=initializeApp({
+    apiKey:"AIzaSyB_JPRDcBNigANkmri-DrTWRjeVKdM3UN8",
+    authDomain:"mobilecraft-6c77e.firebaseapp.com",
+    databaseURL:"https://mobilecraft-6c77e-default-rtdb.firebaseio.com",
+    projectId:"mobilecraft-6c77e"
+  });
+  const db=getDatabase(app);
+  onValue(ref(db,'players'),snap=>{
+    let active=0;const now=Date.now();
+    if(snap.val()) Object.values(snap.val()).forEach(p=>{if(now-(p.t||0)<30000)active++;});
+    document.getElementById('live-txt').textContent=active+' player'+(active!==1?'s':'')+' online right now';
+    document.getElementById('stat-p').textContent=active;
+  });
+} catch(e){
+  document.getElementById('live-txt').textContent='Free to play — no account needed';
+  document.getElementById('stat-p').textContent='?';
+}
+</script>
+</body>
+</html>
